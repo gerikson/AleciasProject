@@ -5,25 +5,59 @@ date: "2024-11-05"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(echo = TRUE)
+#if (!require("BiocManager", quietly = TRUE))
+#    install.packages("BiocManager")
+
+#BiocManager::install("DOSE")
+#BiocManager::install("clusterProfiler")
+#BiocManager::install("ReactomePA")
+#BiocManager::install("ChIPseeker")
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+library(ChIPseeker)
+library(TxDb.Mmusculus.UCSC.mm10.ensGene)
+txdb <- TxDb.Mmusculus.UCSC.mm10.ensGene
+library(clusterProfiler)
+setwd("/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11")
 ```
 
-## Including Plots
+```{r}
+# Sample data
+slices <- c(160, 994, 9240, 4925)
+labels <- c("MSR (160)", "SINE (994)", "LINE 5' UTR (9240)","LTR/ERV (4925)")
 
-You can also embed plots, for example:
+# Define custom colors
+colors <- c("darkred", "yellow",  "orange", "blue")
+
+# Create pie chart
+png("/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11/20241108_pieChart.png")
+pie(slices, labels = labels, main = "# of peaks in repeat classes", col=colors)
+dev.off()
+```
+#of peaks divided by total repeat regions
+```{r}
+slices <- c(0.63, 0.068, 0.99, 0.52)
+labels <- c("MSR (0.63)", "SINE (0.068)", "LINE 5' UTR (0.99)","LTR/ERV (0.52)")
+
+# Define custom colors
+colors <- c("darkred", "yellow",  "orange", "blue")
+
+# Create pie chart
+png("/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11/20241108_pieChart_dividedTotalRepeatRegion.png")
+pie(slices, labels = labels, main = "% repeat classes with INTS11 peaks", col=colors)
+dev.off()
+```
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+peaks <- readPeakFile("/data/jenuwein/processing/05.Alecia/20241028_ChipSeq_INTS11_TimeSeries/snakepipes_DNA-mapping_mm10/MACS2/Rep1_48_hrs_INTS11.filtered.BAMPE_peaks.broadPeak")
+
+peakAnno <- annotatePeak(peaks, tssRegion=c(-3000, 3000),
+                         TxDb=txdb, annoDb="TxDb.Mmusculus.UCSC.mm10.ensGene")
+
+peaks <- addchr(peaks)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
