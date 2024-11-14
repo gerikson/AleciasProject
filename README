@@ -1,0 +1,2 @@
+#Extract the L1Md_A from mm10
+cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.txt | grep  L1Md_A >L1Md_A.mm10.txt
