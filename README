@@ -1,2 +1,31 @@
 #Extract the L1Md_A from mm10
 cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.txt | grep  L1Md_A >L1Md_A.mm10.txt
+cat L1Md_A.mm10.txt | awk -F "\t" '{print $6,$7,$8,$10}' >L1Md_A.mm10.bed
+
+###########
+#Merging the INTS11 peaks
+(mamba) erikson@maximus:/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11/snakepipes_DNA-mapping_mm10/MACS2$ cat Rep1_INTS11.filtered.BAMPE_peaks.broadPeak Rep2_INTS11.filtered.BAMPE_peaks.broadPeak >INTS11.filtered.mergedMeaks.bed
+
+
+#####################
+#Intersect the peaks with L1Md_A regions to see if any of them have peaks
+module load bedtools/2.31.1
+bedtools intersect -a INTS11.filtered.mergedMeaks.bed -b L1Md_A.mm10.bed | wc -l
+
+507 out of 16844 L1MdAs have peaks in mm10
+
+bedtools intersect -a INTS11.filtered.mergedMeaks.bed -b L1Md_A.mm10.bed >L1Md_A.withPeaks.bed
+
+#Extracting the conserved lines
+ cat L1Md_A.mm10.txt | awk '{if ($3==0) print $0,$8-$7}' >conserved_L1MdA.bed
+
+#Do any of these conserved lines intersect with peaks
+ cat conserved_L1MdA.bed  | awk -F "\t" '{print $6,$7,$8,$10}' >conserved_L1MdA_FINAL.bed
+
+#None of the 100% conserved lines intersect with peaks but we don't know if the 208bp LINE Alecia used is not part of a larger line
+#
+
+
+##################
+#Why the asssembly has 100k peaks and aligning to mm10 only 2k!!!!????
+
