@@ -12,7 +12,7 @@ date: "2024-11-05"
 #BiocManager::install("DOSE")
 #BiocManager::install("clusterProfiler")
 #BiocManager::install("ReactomePA")
-#BiocManager::install("ChIPseeker")
+BiocManager::install("ChIPseeker")
 ```
 
 
@@ -21,6 +21,13 @@ library(ChIPseeker)
 library(TxDb.Mmusculus.UCSC.mm10.ensGene)
 txdb <- TxDb.Mmusculus.UCSC.mm10.ensGene
 library(clusterProfiler)
+
+library(ChIPseeker)
+library(GenomicRanges)
+library(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+library(org.Dm.eg.db)
+library(rtracklayer)
+library(ggplot2)
 setwd("/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11")
 ```
 
@@ -52,12 +59,12 @@ dev.off()
 ```
 
 ```{r pressure, echo=FALSE}
-peaks <- readPeakFile("/data/jenuwein/processing/05.Alecia/20241028_ChipSeq_INTS11_TimeSeries/snakepipes_DNA-mapping_mm10/MACS2/Rep1_48_hrs_INTS11.filtered.BAMPE_peaks.broadPeak")
+peaks <- readPeakFile("/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11/snakepipes_DNA-mapping_mm10/MACS2/INTS11_combinedPeaks.bed")
 
 peakAnno <- annotatePeak(peaks, tssRegion=c(-3000, 3000),
                          TxDb=txdb, annoDb="TxDb.Mmusculus.UCSC.mm10.ensGene")
 
-peaks <- addchr(peaks)
+plotAnnoPie(peakAnno)
 
 ```
 
