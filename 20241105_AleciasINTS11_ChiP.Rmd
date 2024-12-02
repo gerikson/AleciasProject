@@ -66,5 +66,21 @@ peakAnno <- annotatePeak(peaks, tssRegion=c(-3000, 3000),
 
 plotAnnoPie(peakAnno)
 
+pdf(file="/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11/20241202_INTS11_pieChart.pdf")
+plotAnnoPie(peakAnno)
+dev.off()
+
+
+# Convert to data frames
+peakAnno_df <- as.data.frame(peakAnno)
+
+# Initialize customCategory column
+peakAnno_df$customCategory <- peakAnno_df$annotation
+
+##################
+#extract only the distal intergenic peaks that are not annotated by anything else
+peakAnno_distal<-peakAnno_df[peakAnno_df$annotation == "Distal Intergenic",]
+
+
 ```
 
