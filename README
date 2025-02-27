@@ -25,7 +25,38 @@ bedtools intersect -a INTS11.filtered.mergedMeaks.bed -b L1Md_A.mm10.bed >L1Md_A
 #None of the 100% conserved lines intersect with peaks but we don't know if the 208bp LINE Alecia used is not part of a larger line
 #
 
+####################
+#Splitting the repeats by  MSR, SINE, LTR/ERV, LINE 5' UTR
+#
+ 2012  cat SINE.mm10.txt | awk -F "\t" '{print $6,$7,$8,$10}' >SINE.mm10.bed
+ 2013  cat SINE.bed | awk -F "\t" '{print $6,$7,$8,$10}' >SINE.mm10.bed
+ 2014  cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.txt | grep GSAT
+ 2015  cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.txt | grep GSAT >GSAT.bed
+ 2016  cat GSAT.bed | awk -F "\t" '{print $6,$7,$8,$10}' >GSAT.mm10.bed
+ 2017  cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.txt | grep LTR >LTR.bed
+ 2018  cat LTR.bed | awk -F "\t" '{print $6,$7,$8,$10}' >LTR.mm10.bed
 
-##################
-#Why the asssembly has 100k peaks and aligning to mm10 only 2k!!!!????
+#Lines only 5'UTR
+ 2032  cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.gtf | grep LINE | awk '{if ($7=="+") print $1,$4,$4+200}' >LINEs.plus.bed
+ 2033  head LINEs.plus.bed
+ 2034  cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.gtf | grep LINE |  awk '{if ($7=="-") print $1,$5-200,$5}' >LINEs.minus.bed
+ 2035  cat  LINEs.minus.bed LINEs.plus.bed >LINEs.5UTR.bed
+ 2036  awk '$2 ~ /^-/ { next; } { print $0 }' LINEs.5UTR.bed >LINEs.5UTR.filtered.bed
+
+
+###########
+#ERVs
+
+
+#################
+#Separating L1Md_T and L1Md_A
+
+/data/jenuwein/processing/05.Alecia/code/AleciasProject$ cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.gtf | grep L1Md_A | awk '{if ($7=="+") print $1,$4,$4+200}' >L1Md_A.plus.bed
+
+/data/jenuwein/processing/05.Alecia/code/AleciasProject$ cat /data/repository/organisms/GRCm38_ensembl/UCSC/mm10/rmsk.gtf | grep L1Md_T | awk '{if ($7=="+") print $1,$4,$4+200}' >L1Md_T.plus.bed
+
+
+module load bedtools/2.31.1
+/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11/snakepipes_DNA-mapping_mm10/MACS2$ bedtools intersect -a Rep2_INTS11.filtered.BAMPE_peaks.broadPeak -b Rep1_INTS11.filtered.BAMPE_peaks.broadPeak >INTS11_mergedPeaks.bed
+
 
