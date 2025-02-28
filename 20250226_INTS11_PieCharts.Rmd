@@ -45,13 +45,117 @@ peakAnno_df$customCategory <- peakAnno_df$annotation
 
 ##################
 #extract only the distal intergenic peaks that are not annotated by anything else
-#peakAnno_distal<-peakAnno_df[peakAnno_df$annotation == "Distal Intergenic",]
+peakAnno_distal<-peakAnno_df[peakAnno_df$annotation == "Distal Intergenic",]
+peakAnno_genes<-peakAnno_df[!(peakAnno_df$annotation == "Distal Intergenic"),]
+
+peakAnno_genes <- peakAnno_genes %>%
+  mutate(customCategory = ifelse(customCategory != "Distal Intergenic", "Genes", customCategory))
+
+###################
+#Everything other the distal intergenenic will be annotated as Genes
+#peakAnno_distal <- peakAnno_df %>%
+#  mutate(customCategory = ifelse(customCategory != "Distal Intergenic", "Genes", customCategory))
+
+LINE_repeats <- import.bed("/data/jenuwein/processing/05.Alecia/code/LINEs.5UTR.filtered.bed")
+
+peaks_gr <- GRanges(seqnames = peakAnno_distal$seqnames, ranges = IRanges(peakAnno_distal$start, peakAnno_distal$end))
+
+# Overlap with repeats only for peaks not annotated as LINEs
+repeats_gr <- GRanges(seqnames = seqnames(LINE_repeats), ranges = IRanges(start(LINE_repeats), end(LINE_repeats)))
+repeat_hits <- findOverlaps(peaks_gr, repeats_gr)
+peakAnno_distal$customCategory[queryHits(repeat_hits)] <- "LINEs"
+
+#SINEs
+SINE_repeats <- import.bed("/data/jenuwein/processing/05.Alecia/code/SINE.mm10.bed")
+repeats_gr <- GRanges(seqnames = seqnames(SINE_repeats), ranges = IRanges(start(SINE_repeats), end(SINE_repeats)))
+repeat_hits <- findOverlaps(peaks_gr, repeats_gr)
+peakAnno_distal$customCategory[queryHits(repeat_hits)] <- "SINEs"
+
+#LTR
+LTR_repeats <- import.bed("/data/jenuwein/processing/05.Alecia/code/LTR.mm10.bed")
+repeats_gr <- GRanges(seqnames = seqnames(LTR_repeats), ranges = IRanges(start(LTR_repeats), end(LTR_repeats)))
+repeat_hits <- findOverlaps(peaks_gr, repeats_gr)
+peakAnno_distal$customCategory[queryHits(repeat_hits)] <- "LTRs"
+
+#GSAT
+GSAT_repeats <- import.bed("/data/jenuwein/processing/05.Alecia/code/GSAT.mm10.bed")
+repeats_gr <- GRanges(seqnames = seqnames(GSAT_repeats), ranges = IRanges(start(GSAT_repeats), end(GSAT_repeats)))
+repeat_hits <- findOverlaps(peaks_gr, repeats_gr)
+peakAnno_distal$customCategory[queryHits(repeat_hits)] <- "MSR"
+
+
+
+peakAnno_df<-rbind(peakAnno_distal, peakAnno_genes)
+# Check if peakAnno_df contains the expected data
+print(head(peakAnno_df))
+
+# Check the distribution of custom categories
+print(table(peakAnno_df$customCategory))
+
+# Calculate the percentage of each category
+custom_anno_counts <- table(peakAnno_df$customCategory)
+print(custom_anno_counts)
+
+# Create custom_anno_df
+custom_anno_df <- data.frame(
+  Category = names(custom_anno_counts),
+  Count = as.numeric(custom_anno_counts)
+)
+custom_anno_df$Percentage <- (custom_anno_df$Count / sum(custom_anno_df$Count)) * 100
+print(custom_anno_df)
+
+# Specify the order of categories for plotting
+category_order <- c("Distal Intergenic", "Genes", "MSR", "SINEs", "LINEs","LTRs")
+
+# Filter the data frame to include only the specified categories and in the specified order
+custom_anno_df <- custom_anno_df[custom_anno_df$Category %in% category_order, ]
+
+# Reorder the factor levels of Category column to match the specified order
+custom_anno_df$Category <- factor(custom_anno_df$Category, levels = category_order)
+
+g<-ggplot(custom_anno_df, aes(x = "", y = Percentage, fill = paste0(Category, " (", round(Percentage, 1), "%)"))) +
+  geom_col(width = 1, position = "fill") +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(hjust = 0.5)  # Center the title
+  ) +
+  # scale_fill_brewer(palette = "Set3", direction = 1) + # You can change the color palette
+  scale_fill_manual(values=c("black","grey", "darkred", "yellow",  "orange", "blue","green")) +
+  labs(fill = "Category", title = "INTS11 peaks")
+
+pdf(file="/data/jenuwein/processing/05.Alecia/20250228_INTS11_pieChart.pdf")
+g
+dev.off()
+```
+
+#Only peaks no distal intergenic or genes
+
+```{r, echo=FALSE}
+peaks <- readPeakFile("/data/jenuwein/processing/05.Alecia/code/AleciasProject/INTS11_mergedPeaks.bed")
+
+peakAnno <- annotatePeak(peaks, tssRegion=c(-3000, 3000),
+                         TxDb=txdb, annoDb="TxDb.Mmusculus.UCSC.mm10.ensGene")
+
+plotAnnoPie(peakAnno)
+
+
+# Convert to data frames
+peakAnno_df <- as.data.frame(peakAnno)
+
+# Initialize customCategory column
+peakAnno_df$customCategory <- peakAnno_df$annotation
+
+##################
+#extract only the distal intergenic peaks that are not annotated by anything else
+peakAnno_distal<-peakAnno_df[peakAnno_df$annotation == "Distal Intergenic",]
 
 
 ###################
 #Everything other the distal intergenenic will be annotated as Genes
-peakAnno_distal <- peakAnno_df %>%
-  mutate(customCategory = ifelse(customCategory != "Distal Intergenic", "Genes", customCategory))
+# <- peakAnno_df %>%
+#  mutate(customCategory = ifelse(customCategory != "Distal Intergenic", "Genes", customCategory))
 
 LINE_repeats <- import.bed("/data/jenuwein/processing/05.Alecia/code/LINEs.5UTR.filtered.bed")
 
@@ -122,9 +226,6 @@ g<-ggplot(custom_anno_df, aes(x = "", y = Percentage, fill = paste0(Category, " 
   scale_fill_manual(values=c("black","grey", "darkred", "yellow",  "orange", "blue","green")) +
   labs(fill = "Category", title = "INTS11 peaks")
 
-pdf(file="/data/jenuwein/processing/05.Alecia/20231212_ChipSeq_INTS11/20250227_INTS11_pieChart.pdf")
-g
-dev.off()
 ```
 
 ##Plot a pie chart for different reapeats categories
@@ -145,6 +246,7 @@ plotAnnoPie(peakAnno)
 peakAnno_df <- as.data.frame(peakAnno)
 
 peakAnno_distal<-peakAnno_df[peakAnno_df$annotation == "Distal Intergenic",]
+peakAnno_distal$customCategory="Distal Intergenic"
 
 LINE_repeats <- import.bed("/data/jenuwein/processing/05.Alecia/code/LINEs.5UTR.filtered.bed")
 
@@ -237,6 +339,26 @@ custom_anno_df <- custom_anno_df[custom_anno_df$Category %in% category_order, ]
 
 # Reorder the factor levels of Category column to match the specified order
 custom_anno_df$Category <- factor(custom_anno_df$Category, levels = category_order)
+
+# Filter the data frame to include only the specified categories and in the specified order
+custom_anno_df <- custom_anno_df[custom_anno_df$Category %in% category_order, ]
+
+# Reorder the factor levels of Category column to match the specified order
+custom_anno_df$Category <- factor(custom_anno_df$Category, levels = category_order)
+
+
+g2<-ggplot(custom_anno_df, aes(x = "", y = Percentage, fill = paste0(Category, " (", round(Percentage, 1), "%)"))) +
+  geom_col(width = 1, position = "fill") +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  theme(legend.position = "right") +
+  # scale_fill_brewer(palette = "Set3", direction = 1) + # You can change the color palette
+  scale_fill_manual(values=c("black", "darkred", "yellow", "blue","green", "orange", "pink","red")) +
+  labs(fill = "Category", title = "INTS11 peaks over repeats")
+
+pdf(file="/data/jenuwein/processing/05.Alecia/20250228_INTS11_DistalIntergenic_pieChart.pdf")
+g2
+dev.off()
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
